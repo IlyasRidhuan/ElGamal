@@ -42,15 +42,27 @@ genKeys bits = do
 
     return (pubKey,prvKey)
 
-encrypt :: PublicKey -> PlainText -> IO CipherText
-encrypt PublicKey{..} (PlainText msg) = do
+modifiedEncrypt :: PublicKey -> PlainText -> IO CipherText
+modifiedEncrypt PublicKey{..} (PlainText msg) = do
+    r <- generateMax q
+    let α = expSafe g r p
+    let β = expSafe g msg p * expSafe y r p
+    return $ CipherText (α,β)
+
+modifiedDecrypt :: PrivateKey -> PublicKey -> CipherText -> Maybe PlainText
+modifiedDecrypt prv pk ct = do
+    gm <- standardDecrypt prv pk ct
+    return $ findGM gm pk 0
+
+standardEncrypt :: PublicKey -> PlainText -> IO CipherText
+standardEncrypt PublicKey{..} (PlainText msg) = do
     r <- generateMax q
     let α = expSafe g r p
     let β = msg * expSafe y r p
     return $ CipherText (α,β)
 
-decrypt :: PrivateKey -> PublicKey -> CipherText -> Maybe PlainText
-decrypt PrivateKey{..} PublicKey {..} (CipherText (α,β)) = do
+standardDecrypt :: PrivateKey -> PublicKey -> CipherText -> Maybe PlainText
+standardDecrypt PrivateKey{..} PublicKey {..} (CipherText (α,β)) = do
     let ax = expSafe α x p
     invAX <- inverse ax p
     let pt = expSafe (β * invAX) 1 p
@@ -61,3 +73,8 @@ findGenerator :: Integer -> Integer -> IO Integer
 findGenerator order gCand
     | gcd gCand order == 1 = return gCand
     | otherwise = generateBetween 1 order >>= findGenerator order
+
+findGM :: PlainText -> PublicKey -> Integer -> PlainText
+findGM pt@(PlainText plain) pk@PublicKey{..} n
+    | expSafe g n p == plain = PlainText n
+    | otherwise = findGM pt pk (n+1)
