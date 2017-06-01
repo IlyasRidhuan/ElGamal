@@ -21,6 +21,7 @@ library
                     ,  QuickCheck
                     ,  transformers
                     ,  split
+                    ,  MonadRandom
   default-language:    Haskell2010
 
 executable ElGamal-exe

@@ -2,12 +2,10 @@
 
 module ShamirSecretSharing where
 
-import ElGamal
 import Crypto.Number.Generate
+import Crypto.Number.ModArithmetic
 import Data.List.Split
-
-type SplitKey = (Integer,PrivateKey)
-type Coefficients = [Double]
+import Components (SplitKey,Coefficients,PublicKey(..),PrivateKey(..))
 
 genThresholdKeys :: PrivateKey -> Int -> Integer -> IO [SplitKey]
 genThresholdKeys PrivateKey{..} t m = do
@@ -32,3 +30,10 @@ prodList' _      0 = []
 prodList' []     _ = []
 prodList' dbls@(i:is) n =
     product ((\x  -> x / (x - i)) <$> filter (/= i) dbls) : prodList' (is ++ [i]) (n-1)
+
+genVerificationKeys :: PublicKey -> [SplitKey] -> [(Integer,Integer)]
+genVerificationKeys _                   []                    = []
+genVerificationKeys pub@PublicKey{..} ((n,PrivateKey{..}):ss) =
+    (n, expSafe g x p) : genVerificationKeys pub ss
+    -- where
+    --     xPrv = x . snd $ s
