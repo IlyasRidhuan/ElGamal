@@ -1,4 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE NamedFieldPuns             #-}
 
@@ -16,7 +15,7 @@ genKeys :: Int -> IO (PublicKey,PrivateKey)
 genKeys bits = do
     p <- generateSafePrime bits
     let q = (p - 1) `div` 2
-    g <- generateBetween 1 q >>= findGenerator q
+    g <- generateBetween 1 (p-1) >>= newGenerator q p
     x <- generateMax q
     let y = expSafe g x p
 
@@ -51,11 +50,10 @@ standardDecrypt PrivateKey{..} PublicKey {..} (CipherText (α,β)) = do
     let pt = expSafe (β * invAX) 1 p
     return $ PlainText pt
 
-
-findGenerator :: Integer -> Integer -> IO Integer
-findGenerator order gCand
-    | gcd gCand order == 1 = return gCand
-    | otherwise = generateBetween 1 order >>= findGenerator order
+newGenerator :: Integer -> Integer -> Integer -> IO Integer
+newGenerator q p gCand
+    | expSafe gCand q p == 1 && gCand ^ 2 /= 1 = return gCand
+    | otherwise = generateBetween 1 (p-1) >>= newGenerator q p
 
 findGM :: PlainText -> PublicKey -> Integer -> PlainText
 findGM pt@(PlainText plain) pk@PublicKey{..} n
