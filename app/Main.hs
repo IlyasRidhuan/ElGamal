@@ -1,9 +1,15 @@
+{-# LANGUAGE RecordWildCards #-}
 module Main where
 import ElGamal
 import ZKP
 import ShamirSecretSharing
 import ThresholdElGamal
 import Components
+
+import Crypto.Number.ModArithmetic
+import Crypto.Number.Generate
+import Crypto.Random.Types
+
 
 main :: IO ()
 main = do
@@ -16,7 +22,8 @@ main = do
     ct@(CipherText (α,β)) <- standardEncrypt pub (PlainText 20)
     let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
     putStrLn "Waiting"
-    checkEqualityOfDL (snd . head $ threshKeys) pub (head verKeys) (head part) ct
+    -- singleInteractiveProof prv pub >>= print
+    checkEqualityOfDL (snd . head $ threshKeys) pub (head verKeys) (head part) ct >>= print
 
     print $ thresholdDecrypt pub ct (take 4 part)
 
