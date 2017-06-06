@@ -1,7 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Components (PublicKey(..),PrivateKey(..),PlainText(..),CipherText(..),
-SplitKey, Coefficients) where
+SplitKey, Coefficients,NIZKP(..), Hash) where
 
+import Crypto.Hash
 
 data PublicKey = PublicKey {
     q :: Integer,
@@ -26,3 +27,10 @@ instance (Num a, Num b) => Num (a,b) where
 
 type SplitKey = (Integer,PrivateKey)
 type Coefficients = [Double]
+type Hash   = Digest SHA256
+
+data NIZKP = NIZKP {
+    a    :: Integer,
+    fsHash :: Hash,
+    z    :: Integer
+}
