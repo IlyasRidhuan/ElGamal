@@ -58,16 +58,3 @@ thresholdDecrypt pk@PublicKey{..} (CipherText (α,β)) partialDec = do
     inv <- inverse lgProduct p
     let pt = (inv * β) `mod` p
     return (PlainText pt)
-
-
-run :: IO ()
-run = do
-    (pub,prv) <- genKeys 16
-    threshKeys <- genThresholdKeys prv 4 5
-    ct@(CipherText (α,β)) <- standardEncrypt pub (PlainText 20)
-    let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
-    print $ thresholdDecrypt pub ct (take 4 part)
-    -- let coeffs = fromJust $ coeffList pub [1,2,3,4,5]
-    -- let denom = product $ (\x -> uncurry expSafe x (p pub)) <$> zip (snd <$> part) coeffs
-    -- let inv = fromJust $ inverse denom (p pub)
-    -- print $ (inv * β) `mod` (p pub)
