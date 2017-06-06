@@ -22,6 +22,7 @@ library
                     ,  transformers
                     ,  split
                     ,  MonadRandom
+                    ,  bytestring
   default-language:    Haskell2010
 
 executable ElGamal-exe
