@@ -7,12 +7,12 @@ import Crypto.Number.ModArithmetic
 import Data.List.Split
 import Components (SplitKey,Coefficients,PublicKey(..),PrivateKey(..))
 
-genThresholdKeys :: PrivateKey -> Int -> Integer -> IO [SplitKey]
+genThresholdKeys :: PrivateKey -> Integer -> Integer -> IO [SplitKey]
 genThresholdKeys PrivateKey{..} t m = do
     polyArray <- traverse (const $ generateBetween 0 x) [1..(t-1)]
     let polynomial = zip [1..] polyArray
     let polyConstituents = (\y x -> y ^ fst x * snd x ) <$> [1..m] <*> polynomial
-    let chunked = chunksOf (t-1) polyConstituents
+    let chunked = chunksOf (fromInteger t-1) polyConstituents
     return $ zip [1..] $ PrivateKey . foldr (+) x <$> chunked
 
 reconstructKey :: [SplitKey] -> PrivateKey
@@ -35,5 +35,3 @@ genVerificationKeys :: PublicKey -> [SplitKey] -> [(Integer,Integer)]
 genVerificationKeys _                   []                    = []
 genVerificationKeys pub@PublicKey{..} ((n,PrivateKey{..}):ss) =
     (n, expSafe g x p) : genVerificationKeys pub ss
-    -- where
-    --     xPrv = x . snd $ s
