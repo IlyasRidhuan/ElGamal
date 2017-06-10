@@ -38,9 +38,17 @@ prop_EqualityOfDL pt = monadicIO $ do
     let verKeys = genVerificationKeys pub threshKeys
     ct@(CipherText (α,β)) <- run $ standardEncrypt pub pt
     let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
+    arr <- run $ traverse (uncurry3 (nonInteractiveEqofDL pub ct)) $ zip3 threshKeys verKeys part
+    let boolArr = uncurry3 (verifyZKPofDL pub ct) <$> zip3 arr verKeys part
+    assert $ condenseTruths boolArr
     run (checkEqualityOfDL pub ct (head threshKeys) (head verKeys) (head part)) >>= assert
-    (ay,bz,z,e) <- run $ nonInteractiveEqofDL pub ct (head threshKeys) (head verKeys) (head part)
-    assert $ verifyZKPofDL pub ct ay bz z e (head verKeys) (head part)
+    nizkpdl <- run $ nonInteractiveEqofDL pub ct (head threshKeys) (head verKeys) (head part)
+    assert $ verifyZKPofDL pub ct nizkpdl (head verKeys) (head part)
 
-genPos :: Gen Integer
-genPos = abs <$> (arbitrary :: Gen Integer) `suchThat` ( > 0)
+condenseTruths :: [Bool] -> Bool
+condenseTruths []   = False
+condenseTruths xs
+    | not (null fls) = False
+    | otherwise = True
+    where
+        fls = filter (== False) xs

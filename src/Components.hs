@@ -1,8 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Components (PublicKey(..),PrivateKey(..),PlainText(..),CipherText(..),
-SplitKey, Coefficients,NIZKP(..), Hash) where
+module Components where
 
 import Crypto.Hash
+import Data.Char
 
 data PublicKey = PublicKey {
     q :: Integer,
@@ -30,7 +30,34 @@ type Coefficients = [Double]
 type Hash   = Digest SHA256
 
 data NIZKP = NIZKP {
-    a    :: Integer,
-    fsHash :: Hash,
-    z    :: Integer
+    γ    :: Integer,
+    fiatShamir :: Hash,
+    w    :: Integer
 }
+
+data NIZKPDL = NIZKPDL {
+    a :: Integer,
+    b :: Integer,
+    z :: Integer,
+    fsHash :: Hash
+}
+
+
+------------- HELPER FUNCTIONS -------------------------
+
+uncurry3 :: (a -> b -> c -> d) -> ((a,b,c) -> d)
+uncurry3 f (x,y,z)  = f x y z
+
+uncurry4 :: (a -> b -> c -> d -> e) -> ((a,b,c,d) -> e)
+uncurry4 f (w,x,y,z)  = f w x y z
+
+checkCongruence:: Integer -> Integer -> Integer -> Bool
+checkCongruence a b modm
+    | (a-b) `mod` modm == 0 = True
+    | otherwise = False
+
+parseHex :: String -> Integer
+parseHex str = toInteger $ parser $ reverse str
+    where
+        parser []     = 0
+        parser (x:xs) = digitToInt x + 16 * parser xs

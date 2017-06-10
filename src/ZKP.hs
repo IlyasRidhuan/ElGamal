@@ -6,7 +6,6 @@ import Crypto.Number.ModArithmetic
 import Crypto.Number.Generate
 import Crypto.Random.Types
 import Crypto.Hash
-import Data.Char
 import qualified Data.ByteString.Char8 as B8
 import ElGamal
 
@@ -35,15 +34,6 @@ verifierResponse PublicKey{..} γ1 γ2 v z u =
         vu = expFast v u p
         zu = expFast z u p
 
--- Non interactive equality of discrete logs using the fiat shamir heuristic
-nonInteractiveEqofDL :: PublicKey -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO (Integer,Integer,Integer,Integer)
-nonInteractiveEqofDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
-    (a,b,τ) <- initialCommit pub ct
-    let hsh = hash $ B8.pack $ show g ++ show (snd vk) ++ show α ++ show (snd pd) ++ show a ++ show b :: Hash
-    let e = parseHex (show hsh )`mod` q
-    let z = challengeResponse prv pub τ e
-    return (a,b,z,e)
-
 -- Interactive equality of discrete logs for interactive ZKP
 checkEqualityOfDL :: PublicKey -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO Bool
 checkEqualityOfDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
@@ -55,11 +45,20 @@ checkEqualityOfDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
     let αz = expFast α z p
     return $ checkCongruence gz ay p && checkCongruence αz bz p
 
+-- Non interactive equality of discrete logs using the fiat shamir heuristic
+nonInteractiveEqofDL :: PublicKey -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO NIZKPDL
+nonInteractiveEqofDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
+    (a,b,τ) <- initialCommit pub ct
+    let hsh = hash $ B8.pack $ show g ++ show (snd vk) ++ show α ++ show (snd pd) ++ show a ++ show b :: Hash
+    let e = parseHex (show hsh )`mod` q
+    let z = challengeResponse prv pub τ e
+    return $ NIZKPDL a b z hsh
 
 -- Verifying the ZKP of discrete logs by check the congruence between gz_1 === ay_1 (mod p) && gz_2 === ay_2 (mod p)
-verifyZKPofDL :: PublicKey -> CipherText -> Integer -> Integer -> Integer -> Integer -> (Integer,Integer) -> (Integer, Integer) -> Bool
-verifyZKPofDL pub@PublicKey{..} (CipherText (α,_)) a b z e vk pd = checkCongruence gz ay p && checkCongruence αz bz p
+verifyZKPofDL :: PublicKey -> CipherText -> NIZKPDL -> (Integer,Integer) -> (Integer, Integer) -> Bool
+verifyZKPofDL pub@PublicKey{..} (CipherText (α,_)) NIZKPDL{..} vk pd = checkCongruence gz ay p && checkCongruence αz bz p
     where
+        e = parseHex (show fsHash )`mod` q
         (ay,bz) = verifierResponse pub a b (snd vk) (snd pd) e
         gz = expFast g z p
         αz = expFast α z p
@@ -92,18 +91,7 @@ nonInteractiveZKP PrivateKey{..} pub@PublicKey{..} = do
 verifyZKP :: PublicKey -> NIZKP -> Bool
 verifyZKP PublicKey{..} NIZKP{..} = checkCongruence gz test p
     where
-        gz = expFast g z p
-        e = parseHex (show fsHash) `mod` q
+        gz = expFast g w p
+        e = parseHex (show fiatShamir) `mod` q
         he = expFast y e p
-        test = expFast (a * he) 1 p
-
-checkCongruence:: Integer -> Integer -> Integer -> Bool
-checkCongruence a b modm
-    | (a-b) `mod` modm == 0 = True
-    | otherwise = False
-
-parseHex :: String -> Integer
-parseHex str = toInteger $ parser $ reverse str
-    where
-        parser []     = 0
-        parser (x:xs) = digitToInt x + 16 * parser xs
+        test = expFast (γ * he) 1 p
