@@ -10,7 +10,7 @@ main = do
     -- Generate a 64 bit key pair
     (pub,prv) <- genKeys 64
     -- Generate split keys for 3 of 5 threshold encryption
-    threshKeys <- genThresholdKeys prv 3 5
+    threshKeys <- genThresholdKeys pub prv 3 5
     -- Calculate verification keys for the threshold keys
     let verKeys = genVerificationKeys pub threshKeys
     -- Encrypt the number 20 with standard ElGamal
