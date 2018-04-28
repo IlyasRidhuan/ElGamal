@@ -8,7 +8,7 @@ import Crypto.Number.Prime
 import Crypto.Number.ModArithmetic
 import Crypto.Number.Generate
 import Data.List.Split
-import Components
+import ElGamalComponents
 
 
 genKeys :: Int -> IO (PublicKey,PrivateKey)

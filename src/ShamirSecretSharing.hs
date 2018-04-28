@@ -6,7 +6,7 @@ module ShamirSecretSharing where
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
 import Data.List.Split
-import Components (SplitKey,Coefficients,PublicKey(..),PrivateKey(..))
+import ElGamalComponents (SplitKey,Coefficients,PublicKey(..),PrivateKey(..))
 import Data.Ratio
 
 genThresholdKeys :: PublicKey -> PrivateKey -> Integer -> Integer -> IO [SplitKey]

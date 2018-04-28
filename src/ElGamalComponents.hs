@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Components where
+module ElGamalComponents where
 
 import Crypto.Hash
 import Data.Char

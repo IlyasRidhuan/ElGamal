@@ -3,7 +3,7 @@ import ElGamal
 import ZKP
 import ShamirSecretSharing
 import ThresholdElGamal
-import Components
+import ElGamalComponents
 
 main :: IO ()
 main = do

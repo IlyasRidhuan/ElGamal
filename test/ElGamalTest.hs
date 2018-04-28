@@ -5,7 +5,7 @@ import Test.QuickCheck.Monadic
 import Data.Maybe
 import ElGamal
 import Control.Monad.IO.Class
-import Components
+import ElGamalComponents
 
 testElGamal :: IO ()
 testElGamal = do

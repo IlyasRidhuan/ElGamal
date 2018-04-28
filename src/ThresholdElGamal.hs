@@ -4,7 +4,7 @@ module ThresholdElGamal where
 
 import ElGamal
 import ShamirSecretSharing
-import Components
+import ElGamalComponents
 import Crypto.Number.ModArithmetic
 import Crypto.Number.Prime
 import Control.Applicative

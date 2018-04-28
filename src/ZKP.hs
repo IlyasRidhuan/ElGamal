@@ -1,7 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module ZKP where
 
-import Components
+import ElGamalComponents
 import Crypto.Number.ModArithmetic
 import Crypto.Number.Generate
 import Crypto.Random.Types

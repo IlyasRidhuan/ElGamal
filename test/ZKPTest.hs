@@ -5,7 +5,7 @@ import Test.QuickCheck.Monadic
 import ZKP
 import ShamirSecretSharing
 import ThresholdElGamal hiding (run)
-import Components
+import ElGamalComponents
 import ElGamal
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
@@ -34,7 +34,7 @@ prop_EqualityOfDL pt = monadicIO $ do
     (pub,prv) <- run $ genKeys bits
     ub <- run $ generate ( choose (5,20) :: Gen Integer)
     lb <- run $ generate ( choose (3,ub) :: Gen Integer)
-    threshKeys <- run $ genThresholdKeys prv lb ub
+    threshKeys <- run $ genThresholdKeys pub prv lb ub
     let verKeys = genVerificationKeys pub threshKeys
     ct@(CipherText (α,β)) <- run $ standardEncrypt pub pt
     let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
