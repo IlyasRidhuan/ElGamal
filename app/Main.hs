@@ -1,4 +1,5 @@
 module Main where
+    
 import ElGamal
 import ZKP
 import ShamirSecretSharing

@@ -7,15 +7,15 @@ import ElGamal
 import Control.Monad.IO.Class
 import ElGamalComponents
 
-testElGamal :: IO ()
-testElGamal = do
+main :: IO ()
+main = do
     -- bits <- generate $ abs <$> (arbitrary :: Gen Int) `suchThat` (> 10)
     -- (pub,prv) <- genKeys bits
     -- print pub
     -- print prv
-    quickCheckWith stdArgs { maxSuccess = 5000 } $ prop_MultiplicativeHomomorphism
+    quickCheckWith stdArgs { maxSuccess = 1000 } $ prop_MultiplicativeHomomorphism
     quickCheckWith stdArgs { maxSuccess = 1000 } $ newpropEncryptDecrypt
-
+    quickCheckWith stdArgs { maxSuccess = 1000 } $ prop_AdditiveHomomorphism
 
 -- monadic fromJust $
 instance Arbitrary PlainText where
@@ -45,6 +45,17 @@ prop_MultiplicativeHomomorphism pt1@(PlainText plain1) pt2@(PlainText plain2) = 
     ct <- run $ standardEncrypt pub pt1
     ct' <- run $ standardEncrypt pub pt2
 
-    let CipherText(α,β) = ct * ct'
-    Just (PlainText p) <- return $ standardDecrypt prv pub (CipherText (α `mod` (p pub),β `mod` (p pub)))
+    let rt = ct * ct'
+    Just (PlainText p) <- return $ standardDecrypt prv pub rt
     assert $ p == (plain1*plain2)
+
+prop_AdditiveHomomorphism :: PlainText -> PlainText -> Property
+prop_AdditiveHomomorphism pt1@(PlainText plain1) pt2@(PlainText plain2) = monadicIO $ do
+    bits <- run $ generate $ abs <$> (arbitrary :: Gen Int) `suchThat` (> 32)
+    (pub,prv) <- run $ genKeys bits
+    ct <- run $ modifiedEncrypt pub pt1
+    ct' <- run $ modifiedEncrypt pub pt2
+
+    let rt = ct * ct'
+    Just (PlainText p) <- return $ modifiedDecrypt prv pub rt
+    assert $ p == (plain1 + plain2)
