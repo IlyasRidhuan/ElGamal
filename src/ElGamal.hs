@@ -24,7 +24,7 @@ genKeys bits = do
 
     return (pubKey,prvKey)
 
-modifiedEncrypt :: PublicKey -> PlainText -> IO CipherText
+modifiedEncrypt :: MonadRandom m => PublicKey -> PlainText -> m CipherText
 modifiedEncrypt PublicKey{..} (PlainText msg) = do
     r <- generateMax q
     let α = expSafe g r p
@@ -36,7 +36,7 @@ modifiedDecrypt prv pk ct = do
     gm <- standardDecrypt prv pk ct
     return $ findGM gm pk 0
 
-standardEncrypt :: PublicKey -> PlainText -> IO CipherText
+standardEncrypt :: MonadRandom m => PublicKey -> PlainText -> m CipherText
 standardEncrypt PublicKey{..} (PlainText msg) = do
     r <- generateMax q
     let α = expSafe g r p
@@ -50,7 +50,7 @@ standardDecrypt PrivateKey{..} PublicKey {..} (CipherText (α,β)) = do
     let pt = expSafe (β * invAX) 1 p
     return $ PlainText pt
 
-newGenerator :: Integer -> Integer -> Integer -> IO Integer
+newGenerator :: MonadRandom m => Integer -> Integer -> Integer -> m Integer
 newGenerator q p gCand
     | expSafe gCand q p == 1 && gCand ^ 2 /= 1 = return gCand
     | otherwise = generateBetween 1 (p-1) >>= newGenerator q p
