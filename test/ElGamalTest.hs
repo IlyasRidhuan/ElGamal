@@ -7,16 +7,6 @@ import ElGamal
 import Control.Monad.IO.Class
 import ElGamalComponents
 
-main :: IO ()
-main = do
-    -- bits <- generate $ abs <$> (arbitrary :: Gen Int) `suchThat` (> 10)
-    -- (pub,prv) <- genKeys bits
-    -- print pub
-    -- print prv
-    quickCheckWith stdArgs { maxSuccess = 1000 } $ prop_MultiplicativeHomomorphism
-    quickCheckWith stdArgs { maxSuccess = 1000 } $ newpropEncryptDecrypt
-    quickCheckWith stdArgs { maxSuccess = 1000 } $ prop_AdditiveHomomorphism
-
 -- monadic fromJust $
 instance Arbitrary PlainText where
     arbitrary = do

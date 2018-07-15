@@ -10,17 +10,6 @@ import ElGamal
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
 
-
-instance Arbitrary PlainText where
-    arbitrary = do
-        pt <- (arbitrary :: Gen Integer) `suchThat` (> 0)
-        return $ PlainText pt
-
-testZKP :: IO ()
-testZKP = do
-    quickCheckWith stdArgs { maxSuccess = 100 } prop_SingleNonInteractiveZKP
-    quickCheckWith stdArgs { maxSuccess = 100 } prop_EqualityOfDL
-
 prop_SingleNonInteractiveZKP :: Property
 prop_SingleNonInteractiveZKP = monadicIO $ do
     bits <- Test.QuickCheck.Monadic.run $ generate $ abs <$> (arbitrary :: Gen Int) `suchThat` (> 10)
