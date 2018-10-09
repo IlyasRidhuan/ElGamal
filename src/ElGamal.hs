@@ -7,11 +7,10 @@ import Crypto.Random
 import Crypto.Number.Prime
 import Crypto.Number.ModArithmetic
 import Crypto.Number.Generate
-import Data.List.Split
 import ElGamalComponents
 
 
-genKeys :: Int -> IO (PublicKey,PrivateKey)
+genKeys :: MonadRandom m => Int -> m (PublicKey,PrivateKey)
 genKeys bits = do
     p <- generateSafePrime bits
     let q = (p - 1) `div` 2
