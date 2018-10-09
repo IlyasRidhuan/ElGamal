@@ -4,11 +4,9 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import ZKP
 import ShamirSecretSharing
-import ThresholdElGamal hiding (run)
+import ThresholdElGamal
 import ElGamalComponents
 import ElGamal
-import Crypto.Number.Generate
-import Crypto.Number.ModArithmetic
 
 prop_SingleNonInteractiveZKP :: Property
 prop_SingleNonInteractiveZKP = monadicIO $ do
@@ -25,8 +23,8 @@ prop_EqualityOfDL pt = monadicIO $ do
     lb <- run $ generate ( choose (3,ub) :: Gen Integer)
     threshKeys <- run $ genThresholdKeys pub prv lb ub
     let verKeys = genVerificationKeys pub threshKeys
-    ct@(CipherText (α,β)) <- run $ standardEncrypt pub pt
-    let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
+    ct <- run $ standardEncrypt pub pt
+    let part = (\key -> partialDecrypt key pub ct) <$> threshKeys
     arr <- run $ traverse (uncurry3 (nonInteractiveEqofDL pub ct)) $ zip3 threshKeys verKeys part
     let boolArr = uncurry3 (verifyZKPofDL pub ct) <$> zip3 arr verKeys part
     assert $ condenseTruths boolArr
