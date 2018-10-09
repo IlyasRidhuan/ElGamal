@@ -3,6 +3,7 @@ module ElGamalComponents where
 
 import Crypto.Hash
 import Data.Char
+import Data.Semigroup
 
 data PublicKey = PublicKey {
     q :: Integer,
@@ -13,17 +14,11 @@ data PublicKey = PublicKey {
 
 newtype PrivateKey = PrivateKey {x :: Integer} deriving (Show)
 newtype PlainText = PlainText Integer deriving (Show,Num,Enum,Integral,Real,Ord,Eq)
-newtype CipherText = CipherText (Integer,Integer) deriving (Show,Ord,Eq,Num)
+newtype CipherText = CipherText (Integer,Integer,Integer) deriving (Show,Ord,Eq)
 
+instance Semigroup CipherText where
+    CipherText (a,b,n) <> CipherText(a',b',_) = CipherText ((a * a' `mod` n),(b * b' `mod` n),n)
 
-instance (Num a, Num b) => Num (a,b) where
-        fromInteger x = (fromInteger x, fromInteger x)
-        (a,b) + (a',b') = (a + a', b + b')
-        (a,b) - (a',b') = (a - a', b - b')
-        (a,b) * (a',b') = (a * a', b * b')
-        negate (a,b) = (negate a, negate b)
-        abs (a,b) = (abs a, abs b)
-        signum (a,b) = (signum a, signum b)
 
 type SplitKey = (Integer,PrivateKey)
 type Coefficients = [Double]
@@ -41,7 +36,6 @@ data NIZKPDL = NIZKPDL {
     z :: Integer,
     fsHash :: Hash
 }
-
 
 ------------- HELPER FUNCTIONS -------------------------
 
@@ -61,3 +55,5 @@ parseHex str = toInteger $ parser $ reverse str
     where
         parser []     = 0
         parser (x:xs) = digitToInt x + 16 * parser xs
+
+

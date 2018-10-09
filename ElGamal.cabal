@@ -1,22 +1,21 @@
--- This file has been generated from package.yaml by hpack version 0.21.2.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5df2e61fc94f8b0bec886b33189f91ccdae25ebcda4fffc02481071b5f477ccb
+-- hash: c1f25221d9a4f8245002b881199014e436262d926a836dfcce4951c354eae430
 
 name:           ElGamal
-version:        0.2.0.0
+version:        0.1.0.0
 description:    Please see the README on Github at <https://github.com/githubuser/ElGamal#readme>
 homepage:       https://github.com/githubuser/ElGamal#readme
 bug-reports:    https://github.com/githubuser/ElGamal/issues
 author:         Author name here
-maintainer:     ilyasridhuan@gmail.com
-copyright:      2018 Ilyas Ridhuan 
+maintainer:     example@example.com
+copyright:      2018 Author name here
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
-
 extra-source-files:
     README.md
 
