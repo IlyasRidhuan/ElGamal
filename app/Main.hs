@@ -15,9 +15,9 @@ main = do
     -- Calculate verification keys for the threshold keys
     let verKeys = genVerificationKeys pub threshKeys
     -- Encrypt the number 20 with standard ElGamal
-    ct@(CipherText (α,β)) <- standardEncrypt pub (PlainText 20)
+    ct <- standardEncrypt pub (PlainText 20)
     -- Calculate partial decryptions with all the threshold keys
-    let part = (\x -> partialDecrypt x pub ct) <$> threshKeys
+    let part = (\key -> partialDecrypt key pub ct) <$> threshKeys
     -- Calculate the non interactive zero knowledge proofs associated with each decryption
     arr <- traverse (uncurry3 (nonInteractiveEqofDL pub ct)) $ zip3 threshKeys verKeys part
     -- Verify that the NIZKP are true
