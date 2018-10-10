@@ -6,14 +6,14 @@ module ShamirSecretSharing where
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
 import Data.List.Split
-import ElGamalComponents (SplitKey,Coefficients,PublicKey(..),PrivateKey(..))
+import ElGamalComponents (SplitKey,PublicKey(..),PrivateKey(..))
 import Data.Ratio
 
 genThresholdKeys :: PublicKey -> PrivateKey -> Integer -> Integer -> IO [SplitKey]
 genThresholdKeys PublicKey{..} PrivateKey{..} t m = do
     polyArray <- traverse (const $ generateBetween 0 x) [1..(t-1)]
     let polynomial = zip [1..] polyArray
-    let polyConstituents = (\x y -> expSafe x (fst y) p * snd y ) <$> [1..m] <*> polynomial
+    let polyConstituents = (\base key_shard -> expSafe base (fst key_shard) p * snd key_shard ) <$> [1..m] <*> polynomial
     let chunked = chunksOf (fromInteger t-1) polyConstituents
     return $ zip [1..] $ PrivateKey . foldr (+) x <$> chunked
 

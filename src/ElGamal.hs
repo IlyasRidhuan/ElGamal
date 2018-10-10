@@ -60,7 +60,7 @@ standardDecrypt PrivateKey{..} (CipherText (α,β,p)) = do
 
 newGenerator :: MonadRandom m => Integer -> Integer -> Integer -> m Integer
 newGenerator q p gCand
-    | expSafe gCand q p == 1 && gCand ^ 2 /= 1 = return gCand
+    | expSafe gCand q p == 1 && gCand ^ (2 :: Integer) /= (1 :: Integer) = return gCand
     | otherwise = generateBetween 1 (p-1) >>= newGenerator q p
 
 findGM :: PlainText -> PublicKey -> Integer -> PlainText

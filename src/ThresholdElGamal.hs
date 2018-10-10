@@ -2,13 +2,9 @@
 {-# LANGUAGE NamedFieldPuns             #-}
 module ThresholdElGamal where
 
-import ElGamal
-import ShamirSecretSharing
 import ElGamalComponents
 import Crypto.Number.ModArithmetic
 import Crypto.Number.Prime
-import Control.Applicative
-import Data.Maybe
 
 data LagrangePolynomial = LP {
     num :: Integer,
@@ -45,14 +41,14 @@ mkCoprimeList (l@LP{..}:lp)
         gcdDenom = denom `div` gCD
 
 computeList :: PublicKey -> [LagrangePolynomial] -> Maybe [Integer]
-computeList pk@PublicKey{..} =
+computeList PublicKey{..} =
     traverse (\x -> fmap (flip (`expSafe` 1) q . (num x *)) (inverse (denom x) q))
 
 partialDecrypt :: SplitKey -> PublicKey -> CipherText -> (Integer,Integer)
-partialDecrypt (i,PrivateKey{..}) PublicKey {..} (CipherText(α,β,n)) = (i,expSafe α x p)
+partialDecrypt (i,PrivateKey{..}) PublicKey {..} (CipherText(α,_,_)) = (i,expSafe α x p)
 
 thresholdDecrypt :: PublicKey -> CipherText -> [(Integer,Integer)] -> Maybe PlainText
-thresholdDecrypt pk@PublicKey{..} (CipherText(α,β,n)) partialDec = do
+thresholdDecrypt pk@PublicKey{..} (CipherText(_,β,_)) partialDec = do
     coeffs <- coeffList pk $ fst <$> partialDec
     let lgProduct = product $ (\x -> uncurry expSafe x p) <$> zip (snd <$> partialDec) coeffs
     inv <- inverse lgProduct p
