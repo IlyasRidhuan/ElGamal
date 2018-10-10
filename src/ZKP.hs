@@ -7,19 +7,18 @@ import Crypto.Number.Generate
 import Crypto.Random.Types
 import Crypto.Hash
 import qualified Data.ByteString.Char8 as B8
-import ElGamal
 
 
 -- Sets up the initial commit if a^τ & b^τ by the prover of some random τ
 initialCommit :: MonadRandom m => PublicKey -> CipherText -> m (Integer,Integer,Integer)
-initialCommit PublicKey{..} (CipherText (α,_)) = do
+initialCommit PublicKey{..} (CipherText(α,_,_)) = do
     τ <- generateMax q
     return (expSafe g τ p, expSafe α τ p,τ)
 
 -- For interactive ZKP only. Generates some random integer e < 2^t where 2^t < q
 verifierChallenge :: MonadRandom m => PublicKey -> m Integer
 verifierChallenge PublicKey{..} = do
-    let maxi = floor $ logBase 2 (fromInteger q)
+    let maxi = floor (logBase 2 (fromInteger q) :: Double) :: Integer
     generateMax (2 ^ maxi)
 
 challengeResponse :: PrivateKey -> PublicKey -> Integer -> Integer -> Integer
@@ -36,7 +35,7 @@ verifierResponse PublicKey{..} γ1 γ2 v z u =
 
 -- Interactive equality of discrete logs for interactive ZKP
 checkEqualityOfDL :: PublicKey -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO Bool
-checkEqualityOfDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
+checkEqualityOfDL pub@PublicKey{..} ct@(CipherText(α,_,_)) (_,prv) vk pd  = do
     (a,b,τ) <- initialCommit pub ct
     u <- verifierChallenge pub
     let z = challengeResponse prv pub τ u
@@ -47,7 +46,7 @@ checkEqualityOfDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
 
 -- Non interactive equality of discrete logs using the fiat shamir heuristic
 nonInteractiveEqofDL :: PublicKey -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO NIZKPDL
-nonInteractiveEqofDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = do
+nonInteractiveEqofDL pub@PublicKey{..} ct@(CipherText(α,_,_)) (_,prv) vk pd  = do
     (a,b,τ) <- initialCommit pub ct
     let hsh = hash $ B8.pack $ show g ++ show (snd vk) ++ show α ++ show (snd pd) ++ show a ++ show b :: Hash
     let e = parseHex (show hsh )`mod` q
@@ -56,7 +55,7 @@ nonInteractiveEqofDL pub@PublicKey{..} ct@(CipherText (α,_)) (_,prv) vk pd  = d
 
 -- Verifying the ZKP of discrete logs by check the congruence between gz_1 === ay_1 (mod p) && gz_2 === ay_2 (mod p)
 verifyZKPofDL :: PublicKey -> CipherText -> NIZKPDL -> (Integer,Integer) -> (Integer, Integer) -> Bool
-verifyZKPofDL pub@PublicKey{..} (CipherText (α,_)) NIZKPDL{..} vk pd = checkCongruence gz ay p && checkCongruence αz bz p
+verifyZKPofDL pub@PublicKey{..} (CipherText(α,_,_)) NIZKPDL{..} vk pd = checkCongruence gz ay p && checkCongruence αz bz p
     where
         e = parseHex (show fsHash )`mod` q
         (ay,bz) = verifierResponse pub a b (snd vk) (snd pd) e
@@ -65,12 +64,12 @@ verifyZKPofDL pub@PublicKey{..} (CipherText (α,_)) NIZKPDL{..} vk pd = checkCon
 
 -- Basic Sigma Protocol for proving knowledge of the discrete logarithm of some y = g^x
 sigmaProtocol :: PrivateKey -> PublicKey -> IO Bool
-sigmaProtocol PrivateKey{..} pub@PublicKey{..} = do
+sigmaProtocol PrivateKey{..} PublicKey{..} = do
     let h = expFast g x p
     r <- generateMax q
     let a = expFast g r p
-    let t = floor $ logBase 2 (fromInteger q)
-    e <- generateMax (2 ^ t)
+    let t = floor (logBase 2 (fromInteger q) :: Double) :: Integer
+    e <- generateMax ( 2^t )
     let z = r + expFast (e * x) 1 q
     let gz = expFast g z p
     let he = expFast h e p
@@ -79,7 +78,7 @@ sigmaProtocol PrivateKey{..} pub@PublicKey{..} = do
 
 -- NonInteractive Sigma Protocol using the fiat Shamir heuristic
 nonInteractiveZKP :: PrivateKey -> PublicKey -> IO NIZKP
-nonInteractiveZKP PrivateKey{..} pub@PublicKey{..} = do
+nonInteractiveZKP PrivateKey{..} PublicKey{..} = do
     r <- generateMax q
     let a = expFast g r p
     let hsh = hash $ B8.pack $ show g ++ show y ++ show a :: Hash
