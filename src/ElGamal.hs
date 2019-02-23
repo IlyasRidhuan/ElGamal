@@ -28,12 +28,12 @@ modifiedEncrypt PublicKey{..} (PlainText msg) = do
     r <- generateMax q
     let α = expSafe g r p
     let β = expSafe g msg p * expSafe y r p
-    return $ CipherText (α,β,p)
+    return $ CipherText α β p
 
 
 -- Useful when providing external random integers ---
 modifiedEncryptWithR :: PublicKey -> Integer -> PlainText -> CipherText
-modifiedEncryptWithR PublicKey{..} r (PlainText msg) = CipherText (α,β,p)
+modifiedEncryptWithR PublicKey{..} r (PlainText msg) = CipherText α β p
     where
         α = expSafe g r p
         β = expSafe g msg p * expSafe y r p
@@ -49,10 +49,10 @@ standardEncrypt PublicKey{..} (PlainText msg) = do
     r <- generateMax q
     let α = expSafe g r p
     let β = msg * expSafe y r p
-    return $ CipherText (α,β,p)
+    return $ CipherText α β p
 
 standardDecrypt :: PrivateKey -> CipherText -> Maybe PlainText
-standardDecrypt PrivateKey{..} (CipherText (α,β,p)) = do
+standardDecrypt PrivateKey{..} CipherText {..} = do
     let ax = expSafe α x p
     invAX <- inverse ax p
     let pt = expSafe (β * invAX) 1 p

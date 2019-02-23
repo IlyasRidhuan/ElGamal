@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 module ElGamalComponents where
 
 import Crypto.Hash
@@ -14,10 +15,14 @@ data PublicKey = PublicKey {
 
 newtype PrivateKey = PrivateKey {x :: Integer} deriving (Show)
 newtype PlainText = PlainText Integer deriving (Show,Num,Enum,Integral,Real,Ord,Eq)
-newtype CipherText = CipherText (Integer,Integer,Integer) deriving (Show,Ord,Eq)
+data CipherText = CipherText {
+    α :: Integer,
+    β :: Integer,
+    p :: Integer
+} deriving (Show,Ord,Eq)
 
 instance Semigroup CipherText where
-    CipherText (α,β,n) <> CipherText(α',β',_) = CipherText ((α * α' `mod` n),(β * β' `mod` n),n)
+    (CipherText α β n) <> (CipherText α' β' _) = CipherText (α * α' `mod` n) (β * β' `mod` n) n
 
 
 type SplitKey = (Integer,PrivateKey)
