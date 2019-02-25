@@ -6,7 +6,7 @@ import Crypto.Hash
 import Data.Char
 import Data.Semigroup()
 
-data PublicKey = PublicKey {
+data PublicParams = PublicParams {
     q :: Integer,
     p :: Integer,
     g :: Integer,
@@ -18,11 +18,11 @@ newtype PlainText = PlainText Integer deriving (Show,Num,Enum,Integral,Real,Ord,
 data CipherText = CipherText {
     α :: Integer,
     β :: Integer,
-    p :: Integer
+    modulo :: Integer
 } deriving (Show,Ord,Eq)
 
 instance Semigroup CipherText where
-    (CipherText α β n) <> (CipherText α' β' _) = CipherText (α * α' `mod` n) (β * β' `mod` n) n
+    (CipherText α β n) <> (CipherText α' β' _) = CipherText ((α * α') `mod` n) ((β * β') `mod` n) n
 
 
 type SplitKey = (Integer,PrivateKey)
@@ -33,14 +33,14 @@ data NIZKP = NIZKP {
     γ    :: Integer,
     fiatShamir :: Hash,
     w    :: Integer
-}
+} deriving (Show)
 
 data NIZKPDL = NIZKPDL {
     a :: Integer,
     b :: Integer,
     z :: Integer,
     fsHash :: Hash
-}
+} deriving (Show)
 
 ------------- HELPER FUNCTIONS -------------------------
 

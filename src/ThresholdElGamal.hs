@@ -20,7 +20,7 @@ instance Num LagrangePolynomial where
     abs LP{..} = LP {num = abs num, denom = abs num}
     signum LP{..} = LP {num = signum num, denom = signum denom}
 
-coeffList :: PublicKey -> [Integer] -> Maybe [Integer]
+coeffList :: PublicParams -> [Integer] -> Maybe [Integer]
 coeffList pk ints = computeList pk . mkCoprimeList $ coeffList' ints (length ints)
 
 coeffList' :: [Integer] -> Int -> [LagrangePolynomial]
@@ -40,15 +40,15 @@ mkCoprimeList (l@LP{..}:lp)
         gcdNum = num `div` gCD
         gcdDenom = denom `div` gCD
 
-computeList :: PublicKey -> [LagrangePolynomial] -> Maybe [Integer]
-computeList PublicKey{..} =
+computeList :: PublicParams -> [LagrangePolynomial] -> Maybe [Integer]
+computeList PublicParams{..} =
     traverse (\x -> fmap (flip (`expSafe` 1) q . (num x *)) (inverse (denom x) q))
 
-partialDecrypt :: SplitKey -> PublicKey -> CipherText -> (Integer,Integer)
-partialDecrypt (i,PrivateKey{..}) PublicKey {..} (CipherText α _ _) = (i,expSafe α x p)
+partialDecrypt :: SplitKey -> PublicParams -> CipherText -> (Integer,Integer)
+partialDecrypt (i,PrivateKey{..}) PublicParams {..} (CipherText α _ _) = (i,expSafe α x p)
 
-thresholdDecrypt :: PublicKey -> CipherText -> [(Integer,Integer)] -> Maybe PlainText
-thresholdDecrypt pk@PublicKey{..} (CipherText _ β _) partialDec = do
+thresholdDecrypt :: PublicParams -> CipherText -> [(Integer,Integer)] -> Maybe PlainText
+thresholdDecrypt pk@PublicParams{..} (CipherText _ β _) partialDec = do
     coeffs <- coeffList pk $ fst <$> partialDec
     let lgProduct = product $ (\x -> uncurry expSafe x p) <$> zip (snd <$> partialDec) coeffs
     inv <- inverse lgProduct p
