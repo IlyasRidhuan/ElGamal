@@ -11,7 +11,7 @@ import qualified Data.ByteString.Char8 as B8
 
 -- Sets up the initial commit if a^τ & b^τ by the prover of some random τ
 initialCommit :: MonadRandom m => PublicParams -> CipherText -> m (Integer,Integer,Integer)
-initialCommit PublicParams{..} (CipherText α _ _) = do
+initialCommit PublicParams{..} (CipherText α _) = do
     τ <- generateMax q
     return (expSafe g τ p, expSafe α τ p,τ)
 
@@ -35,7 +35,7 @@ verifierResponse PublicParams{..} γ1 γ2 v z u =
 
 -- Interactive equality of discrete logs for interactive ZKP
 checkEqualityOfDL :: PublicParams -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO Bool
-checkEqualityOfDL pub@PublicParams{..} ct@(CipherText α _ _) (_,prv) vk pd  = do
+checkEqualityOfDL pub@PublicParams{..} ct@(CipherText α _) (_,prv) vk pd  = do
     (a,b,τ) <- initialCommit pub ct
     u <- verifierChallenge pub
     let z = challengeResponse prv pub τ u
@@ -46,7 +46,7 @@ checkEqualityOfDL pub@PublicParams{..} ct@(CipherText α _ _) (_,prv) vk pd  = d
 
 -- Non interactive equality of discrete logs using the fiat shamir heuristic
 nonInteractiveEqofDL :: PublicParams -> CipherText -> SplitKey -> (Integer,Integer) -> (Integer, Integer) -> IO NIZKPDL
-nonInteractiveEqofDL pub@PublicParams{..} ct@(CipherText α _ _) (_,prv) vk pd  = do
+nonInteractiveEqofDL pub@PublicParams{..} ct@(CipherText α _) (_,prv) vk pd  = do
     (a,b,τ) <- initialCommit pub ct
     let hsh = hash $ B8.pack $ show g ++ show (snd vk) ++ show α ++ show (snd pd) ++ show a ++ show b :: Hash
     let e = parseHex (show hsh )`mod` q
@@ -55,7 +55,7 @@ nonInteractiveEqofDL pub@PublicParams{..} ct@(CipherText α _ _) (_,prv) vk pd  
 
 -- Verifying the ZKP of discrete logs by check the congruence between gz_1 === ay_1 (mod p) && gz_2 === ay_2 (mod p)
 verifyZKPofDL :: PublicParams -> CipherText -> NIZKPDL -> (Integer,Integer) -> (Integer, Integer) -> Bool
-verifyZKPofDL pub@PublicParams{..} (CipherText α _ _) NIZKPDL{..} vk pd = checkCongruence gz ay p && checkCongruence αz bz p
+verifyZKPofDL pub@PublicParams{..} (CipherText α _) NIZKPDL{..} vk pd = checkCongruence gz ay p && checkCongruence αz bz p
     where
         e = parseHex (show fsHash )`mod` q
         (ay,bz) = verifierResponse pub a b (snd vk) (snd pd) e

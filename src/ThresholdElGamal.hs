@@ -45,10 +45,10 @@ computeList PublicParams{..} =
     traverse (\x -> fmap (flip (`expSafe` 1) q . (num x *)) (inverse (denom x) q))
 
 partialDecrypt :: SplitKey -> PublicParams -> CipherText -> (Integer,Integer)
-partialDecrypt (i,PrivateKey{..}) PublicParams {..} (CipherText α _ _) = (i,expSafe α x p)
+partialDecrypt (i,PrivateKey{..}) PublicParams {..} (CipherText α _) = (i,expSafe α x p)
 
 thresholdDecrypt :: PublicParams -> CipherText -> [(Integer,Integer)] -> Maybe PlainText
-thresholdDecrypt pk@PublicParams{..} (CipherText _ β _) partialDec = do
+thresholdDecrypt pk@PublicParams{..} (CipherText _ β) partialDec = do
     coeffs <- coeffList pk $ fst <$> partialDec
     let lgProduct = product $ (\x -> uncurry expSafe x p) <$> zip (snd <$> partialDec) coeffs
     inv <- inverse lgProduct p

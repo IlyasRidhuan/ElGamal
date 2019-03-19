@@ -1,29 +1,33 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module ElGamalComponents where
 
 import Crypto.Hash
 import Data.Char
+import GHC.Generics
 import Data.Semigroup()
+import Control.DeepSeq
+import qualified Data.Serialize as S
 
 data PublicParams = PublicParams {
     q :: Integer,
     p :: Integer,
     g :: Integer,
     y :: Integer
-} deriving (Show)
+} deriving (Show,Generic,S.Serialize)
 
 newtype PrivateKey = PrivateKey {x :: Integer} deriving (Show)
-newtype PlainText = PlainText Integer deriving (Show,Num,Enum,Integral,Real,Ord,Eq)
+newtype PlainText = PlainText Integer deriving (Show,Num,Real,Ord,Eq,Generic,NFData,S.Serialize)
+
 data CipherText = CipherText {
     α :: Integer,
-    β :: Integer,
-    modulo :: Integer
-} deriving (Show,Ord,Eq)
+    β :: Integer
+} deriving (Show,Ord,Eq,Generic,NFData,S.Serialize)
 
 instance Semigroup CipherText where
-    (CipherText α β n) <> (CipherText α' β' _) = CipherText ((α * α') `mod` n) ((β * β') `mod` n) n
-
+    (CipherText α β) <> (CipherText α' β') = CipherText (α * α') (β * β')
 
 type SplitKey = (Integer,PrivateKey)
 type Coefficients = [Double]
@@ -46,9 +50,6 @@ data NIZKPDL = NIZKPDL {
 
 uncurry3 :: (a -> b -> c -> d) -> ((a,b,c) -> d)
 uncurry3 f (x1,x2,x3)  = f x1 x2 x3
-
-uncurry4 :: (a -> b -> c -> d -> e) -> ((a,b,c,d) -> e)
-uncurry4 f (w1,w2,w3,w4)  = f w1 w2 w3 w4
 
 checkCongruence:: Integer -> Integer -> Integer -> Bool
 checkCongruence a_1 b_1 modm

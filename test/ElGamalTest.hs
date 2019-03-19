@@ -7,13 +7,14 @@ import Test.QuickCheck.Monadic
 import ElGamal
 import ElGamalComponents
 import Data.Bits
+import Crypto.Number.Generate
 
 newtype ValidBits = ValidBits {unValidBits :: Int} deriving Show
 
 instance Arbitrary PlainText where
     arbitrary = do
         pt <- (arbitrary :: Gen Integer) `suchThat` (> 0)
-        return $ PlainText pt
+        return $ PlainText (pt `mod` 10)
 
 instance Arbitrary ValidBits where
     arbitrary = (arbitrary :: Gen Int) `suchThat` (\x_ -> ((>0) x_) && ((<58) . countLeadingZeros) x_) >>= return . ValidBits
@@ -21,7 +22,8 @@ instance Arbitrary ValidBits where
 prop_EncryptDecrypt :: ValidBits -> PlainText -> Property
 prop_EncryptDecrypt bits pt@(PlainText plain) = monadicIO $ do
     (pub,prv) <- run $ genKeys (unValidBits bits)
-    Just (PlainText decryptedP) <- run $ standardDecrypt prv <$> standardEncrypt pub pt
+    r <- run $ generateMax (q pub)
+    Just (PlainText decryptedP) <- return $ modifiedDecrypt prv pub $ (modifiedEncryptWithR pub r pt)
     assert $ plain == decryptedP
 
 prop_MultiplicativeHomomorphism :: ValidBits -> PlainText -> PlainText -> Property
@@ -30,7 +32,7 @@ prop_MultiplicativeHomomorphism bits pt1@(PlainText plain1) pt2@(PlainText plain
     ct <- run $ standardEncrypt pub pt1
     ct' <- run $ standardEncrypt pub pt2
     let rt = ct <> ct'
-    Just (PlainText decryptedMultiple) <- return $ standardDecrypt prv rt
+    Just (PlainText decryptedMultiple) <- return $ standardDecrypt prv pub rt
     assert $ decryptedMultiple == (plain1*plain2)
 
 prop_AdditiveHomomorphism :: ValidBits -> PlainText -> PlainText -> Property
@@ -41,3 +43,12 @@ prop_AdditiveHomomorphism bits pt1@(PlainText plain1) pt2@(PlainText plain2) = m
     let rt = ct <> ct'
     Just (PlainText decryptedAddition) <- return $ modifiedDecrypt prv pub rt
     assert $ decryptedAddition == (plain1 + plain2)
+
+prop_CheckPollardRho :: ValidBits -> PlainText -> Property
+prop_CheckPollardRho bits pt = monadicIO $ do
+    (pub,prv) <- run $ genKeys (unValidBits bits)
+    ct <- run $ modifiedEncrypt pub pt
+    Just (PlainText p1) <- run $ return $ modifiedDecrypt prv pub ct 
+    (PlainText p2) <- run $ modifiedDecrypt' prv pub ct
+    assert $ p1 == p2
+    
