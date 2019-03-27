@@ -9,7 +9,7 @@ module ElGamal (
   standardEncrypt,
 
   modifiedDecrypt,
-  modifiedDecrypt',
+--   modifiedDecrypt',
   standardDecrypt,
   
   binOp,
@@ -69,14 +69,14 @@ modifiedDecrypt prv pp ct = do
     gm <- standardDecrypt prv pp ct
     return $ findGM gm pp 0
 
-modifiedDecrypt' :: PrivateKey -> PublicParams -> CipherText -> IO PlainText
-modifiedDecrypt' prv pp ct = do
-    case standardDecrypt prv pp ct of 
-        Just p@(PlainText gm) -> traverse async ((const $ parallelPollardSearch pp p) <$> [1..10]) >>= waitAnyCancel >>= return . snd
-        otherwise -> error "Decrypt Failed"
+-- modifiedDecrypt' :: PrivateKey -> PublicParams -> CipherText -> IO PlainText
+-- modifiedDecrypt' prv pp ct = do
+--     case standardDecrypt prv pp ct of 
+--         Just p@(PlainText gm) -> traverse async ((const $ parallelPollardSearch pp p) <$> [1..10]) >>= waitAnyCancel >>= return . snd
+--         otherwise -> error "Decrypt Failed"
 
-parallelPollardSearch :: PublicParams -> PlainText -> IO PlainText
-parallelPollardSearch pp@PublicParams{..} pt@(PlainText gm) = flip (pollardsSearch pp) pt <$> ((\x -> PollardCandidate (g * gm) x x) <$> generateBetween 1 q)
+-- parallelPollardSearch :: PublicParams -> PlainText -> IO PlainText
+-- parallelPollardSearch pp@PublicParams{..} pt@(PlainText gm) = flip (pollardsSearch pp) pt <$> ((\x -> PollardCandidate (g * gm) x x) <$> generateBetween 1 q)
 
 standardEncrypt :: MonadRandom m => PublicParams -> PlainText -> m CipherText
 standardEncrypt PublicParams{..} (PlainText msg) = do
@@ -103,32 +103,32 @@ findGM pt@(PlainText plain) pk@PublicParams{..} n
     | otherwise = findGM pt pk (n+1)
 
 
-data PollardCandidate = PollardCandidate{
-    candX :: Integer,
-    candA :: Integer,
-    candB :: Integer
-} deriving (Show)
+-- data PollardCandidate = PollardCandidate{
+--     candX :: Integer,
+--     candA :: Integer,
+--     candB :: Integer
+-- } deriving (Show)
 
-pollardsSearch :: PublicParams -> PollardCandidate -> PlainText -> PlainText
-pollardsSearch pp@PublicParams{..} pc  (PlainText gm )= tpc `par` hpc `pseq` pollardsSearch' tpc hpc 0
-    where
-        hpc = hare pc
-        tpc = tortoise pc
-        hare = new_xab . new_xab
-        tortoise = new_xab
-        new_xab :: PollardCandidate -> PollardCandidate
-        new_xab PollardCandidate{..} = case candX `mod` 3 of
-            0 -> PollardCandidate (expFast (candX* g) 1 p)      (expFast (candA + 1 ) 1 q) $ candB
-            1 -> PollardCandidate (expFast (candX* gm) 1 p)      candA                 $ expFast (candB + 1) 1 q
-            2 -> PollardCandidate (expFast (candX*candX) 1 p)   (expFast (candA*2) 1 q)    $ expFast (candB * 2) 1 q
+-- pollardsSearch :: PublicParams -> PollardCandidate -> PlainText -> PlainText
+-- pollardsSearch pp@PublicParams{..} pc  (PlainText gm )= tpc `par` hpc `pseq` pollardsSearch' tpc hpc 0
+--     where
+--         hpc = hare pc
+--         tpc = tortoise pc
+--         hare = new_xab . new_xab
+--         tortoise = new_xab
+--         new_xab :: PollardCandidate -> PollardCandidate
+--         new_xab PollardCandidate{..} = case candX `mod` 3 of
+--             0 -> PollardCandidate (expFast (candX* g) 1 p)      (expFast (candA + 1 ) 1 q) $ candB
+--             1 -> PollardCandidate (expFast (candX* gm) 1 p)      candA                 $ expFast (candB + 1) 1 q
+--             2 -> PollardCandidate (expFast (candX*candX) 1 p)   (expFast (candA*2) 1 q)    $ expFast (candB * 2) 1 q
 
-        pollardsSearch' :: PollardCandidate -> PollardCandidate -> Integer -> PlainText
-        pollardsSearch' tpc hpc n
-            | n > p = error "Cannot decrypt"
-            | candX (hpc) == candX (tpc) = PlainText result
-            | otherwise = pollardsSearch' (tortoise tpc) (hare hpc) (n+1)
-            where
-                result = ((nom * invD) `mod` q)
-                nom = (candA tpc - candA hpc)
-                denom = (candB hpc - candB tpc)
-                invD = fromMaybe (error "dead") $ inverse denom q
+--         pollardsSearch' :: PollardCandidate -> PollardCandidate -> Integer -> PlainText
+--         pollardsSearch' tpc hpc n
+--             | n > p = error "Cannot decrypt"
+--             | candX (hpc) == candX (tpc) = PlainText result
+--             | otherwise = pollardsSearch' (tortoise tpc) (hare hpc) (n+1)
+--             where
+--                 result = ((nom * invD) `mod` q)
+--                 nom = (candA tpc - candA hpc)
+--                 denom = (candB hpc - candB tpc)
+--                 invD = fromMaybe (error "dead") $ inverse denom q

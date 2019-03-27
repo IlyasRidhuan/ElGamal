@@ -31,7 +31,7 @@ prop_MultiplicativeHomomorphism bits pt1@(PlainText plain1) pt2@(PlainText plain
     (pub,prv) <- run $ genKeys (unValidBits bits)
     ct <- run $ standardEncrypt pub pt1
     ct' <- run $ standardEncrypt pub pt2
-    let rt = ct <> ct'
+    let rt = binOp pub ct ct'
     Just (PlainText decryptedMultiple) <- return $ standardDecrypt prv pub rt
     assert $ decryptedMultiple == (plain1*plain2)
 
@@ -40,15 +40,24 @@ prop_AdditiveHomomorphism bits pt1@(PlainText plain1) pt2@(PlainText plain2) = m
     (pub,prv) <- run $ genKeys (unValidBits bits)
     ct <- run $ modifiedEncrypt pub pt1
     ct' <- run $ modifiedEncrypt pub pt2
-    let rt = ct <> ct'
+    let rt = binOp pub ct ct'
     Just (PlainText decryptedAddition) <- return $ modifiedDecrypt prv pub rt
     assert $ decryptedAddition == (plain1 + plain2)
 
-prop_CheckPollardRho :: ValidBits -> PlainText -> Property
-prop_CheckPollardRho bits pt = monadicIO $ do
+-- prop_CheckPollardRho :: ValidBits -> PlainText -> Property
+-- prop_CheckPollardRho bits pt = monadicIO $ do
+--     (pub,prv) <- run $ genKeys (unValidBits bits)
+--     ct <- run $ modifiedEncrypt pub pt
+--     Just (PlainText p1) <- run $ return $ modifiedDecrypt prv pub ct 
+--     (PlainText p2) <- run $ modifiedDecrypt' prv pub ct
+--     assert $ p1 == p2
+
+prop_CheckExponentiation :: ValidBits -> PlainText -> Property
+prop_CheckExponentiation bits pt@(PlainText plain) = monadicIO $ do
     (pub,prv) <- run $ genKeys (unValidBits bits)
-    ct <- run $ modifiedEncrypt pub pt
-    Just (PlainText p1) <- run $ return $ modifiedDecrypt prv pub ct 
-    (PlainText p2) <- run $ modifiedDecrypt' prv pub ct
-    assert $ p1 == p2
-    
+    r <- run $ generateMax (q pub)
+    let ct = modifiedEncryptWithR pub r pt
+        ct' = expOp pub ct 2
+    Just (PlainText p2) <- run $ return $ modifiedDecrypt prv pub ct'
+    assert $ p2 == (plain*2)
+
