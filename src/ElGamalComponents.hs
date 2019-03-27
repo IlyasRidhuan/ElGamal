@@ -8,6 +8,8 @@ import Crypto.Hash
 import Data.Char
 import GHC.Generics
 import Data.Semigroup()
+import Crypto.Number.Serialize(i2osp,os2ip)
+import qualified Data.ByteString as B
 import Control.DeepSeq
 import qualified Data.Serialize as S
 
@@ -16,15 +18,62 @@ data PublicParams = PublicParams {
     p :: Integer,
     g :: Integer,
     y :: Integer
-} deriving (Show,Generic,S.Serialize)
+} deriving (Show,Generic)
+
+instance S.Serialize PublicParams where
+    put (PublicParams q p g y) = do
+        S.putWord16le $ fromIntegral $ B.length $ i2osp q
+        S.putByteString $ i2osp q
+        S.putWord16le $ fromIntegral $ B.length $ i2osp p
+        S.putByteString $ i2osp p
+        S.putWord16le $ fromIntegral $ B.length $ i2osp g
+        S.putByteString $ i2osp g
+        S.putWord16le $ fromIntegral $ B.length $ i2osp y
+        S.putByteString $ i2osp y
+    
+    get = do
+        length_q <- S.getWord16le
+        q <- S.getByteString $ fromIntegral length_q
+        length_p <- S.getWord16le
+        p <- S.getByteString $ fromIntegral length_p
+        length_g <- S.getWord16le
+        g <- S.getByteString $ fromIntegral length_g
+        length_y <- S.getWord16le
+        y <- S.getByteString $ fromIntegral length_y
+        return $ PublicParams (os2ip q) (os2ip p) (os2ip g) (os2ip y)
+    
 
 newtype PrivateKey = PrivateKey {x :: Integer} deriving (Show)
-newtype PlainText = PlainText Integer deriving (Show,Num,Real,Ord,Eq,Generic,NFData,S.Serialize)
+newtype PlainText = PlainText Integer deriving (Show,Num,Real,Ord,Eq,Generic,NFData)
+
+instance S.Serialize PlainText where
+    put (PlainText i) = do
+        S.putWord16le $ fromIntegral $ B.length $ i2osp i
+        S.putByteString $ i2osp i
+    get = do
+        length_i <- S.getWord16le
+        i <- S.getByteString $ fromIntegral length_i
+        return (PlainText $ os2ip i)
 
 data CipherText = CipherText {
     α :: Integer,
     β :: Integer
-} deriving (Show,Ord,Eq,Generic,NFData,S.Serialize)
+} deriving (Show,Ord,Eq,Generic,NFData)
+
+instance S.Serialize CipherText where
+    put (CipherText α β) = do
+        S.putWord16le $ fromIntegral $ B.length $ i2osp α
+        S.putByteString $ i2osp α
+        S.putWord16le $ fromIntegral $ B.length $ i2osp β
+        S.putByteString $ i2osp β
+    
+    get = do
+        length_α <- S.getWord16le
+        α <- S.getByteString $ fromIntegral length_α
+        length_β <- S.getWord16le
+        β <- S.getByteString $ fromIntegral length_β
+        return $ CipherText (os2ip α) (os2ip β)
+        
 
 instance Semigroup CipherText where
     (CipherText α β) <> (CipherText α' β') = CipherText (α * α') (β * β')
