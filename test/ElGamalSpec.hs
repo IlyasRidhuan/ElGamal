@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module ElGamalTest where
+module ElGamalSpec where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
@@ -8,6 +8,9 @@ import ElGamal
 import ElGamalComponents
 import Data.Bits
 import Crypto.Number.Generate
+import Test.Hspec
+import Test.Hspec.Core.QuickCheck (modifyMaxSuccess)
+
 
 newtype ValidBits = ValidBits {unValidBits :: Int} deriving Show
 
@@ -18,6 +21,19 @@ instance Arbitrary PlainText where
 
 instance Arbitrary ValidBits where
     arbitrary = (arbitrary :: Gen Int) `suchThat` (\x_ -> ((>0) x_) && ((<58) . countLeadingZeros) x_) >>= return . ValidBits
+
+spec :: Spec
+spec = do
+    describe "Check Correctness of El Gamal Commitment" $ do
+        modifyMaxSuccess (const 1000) $ it "Check that decrypt . encrypt is an identity" $ do
+            property prop_EncryptDecrypt
+        modifyMaxSuccess (const 1000) $ it "Check additive homomorphism works" $ do
+            property prop_AdditiveHomomorphism
+        modifyMaxSuccess (const 1000) $ it "Check multiplicative homomorphism works" $ do
+            property prop_MultiplicativeHomomorphism
+
+
+
 
 prop_EncryptDecrypt :: ValidBits -> PlainText -> Property
 prop_EncryptDecrypt bits pt@(PlainText plain) = monadicIO $ do

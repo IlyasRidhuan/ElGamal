@@ -15,7 +15,7 @@ instance Arbitrary PlainText where
         
 spec :: Spec
 spec = do
-    describe "Check Correcteness of EC El Gamal Commitment" $ do
+    describe "Check Correctness of EC El Gamal Commitment" $ do
         modifyMaxSuccess (const 1000) $ it "Check that decrypt . encrypt is an identity" $ do
             property prop_CheckEncryptDecryptEC
         modifyMaxSuccess (const 1000) $ it "Check additive homomorphism works" $ do
