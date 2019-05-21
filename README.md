@@ -4,8 +4,9 @@
 - [x] ElGamal (Multiplicative)
 - [x] Modified ElGamal (Additive)
 - [x] Threshold Encryption (m-of-n)
-- [x] Zero Knowledge Proof of Correct Decryption (Honest Verfier)
-- [ ]  Zero Knowledge Proof of Correct Encryption (For binary decisions)
+- [x] Elliptic Curve El Gamal 
+- [ ] Zero Knowledge Proof of Correct Encryption (Honest Verfier)
+
 
 
 ### Introduction

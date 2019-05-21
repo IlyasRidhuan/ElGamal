@@ -1,7 +1,7 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE OverloadedStrings #-}
 module ElGamalComponents where
 
 import Crypto.Hash
@@ -12,6 +12,15 @@ import Crypto.Number.Serialize(i2osp,os2ip)
 import qualified Data.ByteString as B
 import Control.DeepSeq
 import qualified Data.Serialize as S
+import Crypto.PubKey.ECC.Types
+import Crypto.PubKey.ECC.Prim
+import Data.Word (Word8)
+import Crypto.Random
+import Crypto.Number.Generate
+import Crypto.Number.ModArithmetic
+import qualified Data.ByteString.Base16 as B16
+
+------------- Helpful Instances -------------------------
 
 data PublicParams = PublicParams {
     q :: Integer,
@@ -44,7 +53,7 @@ instance S.Serialize PublicParams where
     
 
 newtype PrivateKey = PrivateKey {x :: Integer} deriving (Show)
-newtype PlainText = PlainText Integer deriving (Show,Num,Real,Ord,Eq,Generic,NFData)
+newtype PlainText = PlainText Integer deriving (Show,Ord,Eq,Generic,NFData)
 
 instance S.Serialize PlainText where
     put (PlainText i) = do
@@ -95,7 +104,89 @@ data NIZKPDL = NIZKPDL {
     fsHash :: Hash
 } deriving (Show)
 
+data ECCipherText = ECCipherText {
+    ec_alpha :: Point,
+    ec_beta :: Point
+} deriving (Show,Eq,Generic,NFData)
+
+instance Semigroup ECCipherText where
+    (ECCipherText a b) <> (ECCipherText a' b') = ECCipherText (pointAdd crv a a') (pointAdd crv b b')
+
+-- instance S.Serialize Point where
+--     put point = S.putByteString
+
+instance S.Serialize ECCipherText where
+    put (ECCipherText a b) = do
+        S.putByteString $ compressPoint a
+        S.putByteString $ compressPoint b
+
+    get = do
+        a <- S.getByteString 66
+        b <- S.getByteString 66
+        
+        return $ ECCipherText (decompressPoint crv a) (decompressPoint crv b)
+
 ------------- HELPER FUNCTIONS -------------------------
+
+crv :: Curve
+crv = getCurveByName SEC_p256k1
+
+ec_g :: Point
+ec_g = ecc_g $ common_curve crv
+
+-- Based on SECP_256k1 Bitcoin Compression --
+compressPoint :: Point -> B.ByteString
+compressPoint PointO = error "O point cannot be compressed"
+compressPoint (Point x y) 
+    | y `mod` 2 == 0 = B16.encode $ B.cons (2 :: Word8) $ i2osp x
+    | otherwise      = B16.encode $ B.cons (3 :: Word8) $ i2osp x
+
+
+decompressPoint :: Curve -> B.ByteString -> Point
+decompressPoint (CurveF2m _) _ = error "Curve must be prime of type Fp"
+decompressPoint (CurveFP  (CurvePrime p _)) bs = do
+    let parityBit = B.take 2 bs
+        xCoord = (os2ip . fst . B16.decode) $ B.drop 2 bs
+        root = cipolla_sqrt p $ (xCoord^3 + 7) `mod` p
+    if (parityBit == "02") then
+        if (root `mod` 2 == 0 ) then
+            Point xCoord root
+        else
+            Point xCoord $ (root * (-1)) `mod` p
+    else
+        if (root `mod` 2 /= 0 ) then
+            Point xCoord root
+        else
+            Point xCoord $ (root * (-1)) `mod` p
+
+cipolla_sqrt :: Integer -> Integer -> Integer
+cipolla_sqrt p n 
+    | checkCongruence (expFast n ((p-1) `div` 2) p) 1 p = collapseMul
+    | otherwise = error "Solution to y^2 is not a square"
+    where
+        a = find_valid_a n p 0
+        omegaSquared = (a ^2 -n) `mod` p
+        power = ((p+1) `div` 2) `mod` p
+        (collapseMul,_) = fold_powers power omegaSquared p (1,0) (a,1)
+
+        fold_powers :: Integer -> Integer -> Integer -> (Integer,Integer) -> (Integer,Integer) -> (Integer,Integer)
+        fold_powers 0 _ _ x _ = x
+        fold_powers n omegaSquared p r s
+            | n `mod` 2 == 1 = fold_powers (n `div` 2) omegaSquared p (cipolla_mul omegaSquared p r s) (cipolla_mul omegaSquared p s s)
+            | otherwise = fold_powers (n `div` 2) omegaSquared p r $ cipolla_mul omegaSquared p s s
+
+        find_valid_a :: Integer -> Integer -> Integer -> Integer
+        find_valid_a n p a
+            | checkCongruence base (-1) p = a
+            | otherwise = find_valid_a n p (a+1)
+            where
+                base = expFast (a^2 - n) ((p-1) `div` 2) p
+
+        cipolla_mul :: Integer -> Integer -> (Integer,Integer) -> (Integer,Integer) -> (Integer,Integer)
+        cipolla_mul omegaSquared p (a,b) (c,d) = (omega_sum ,i_sum)
+            where
+                omega_sum = (a * c + b * d * omegaSquared) `mod` p
+                i_sum = (a * d + c * b ) `mod` p
 
 uncurry3 :: (a -> b -> c -> d) -> ((a,b,c) -> d)
 uncurry3 f (x1,x2,x3)  = f x1 x2 x3
