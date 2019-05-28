@@ -28,7 +28,7 @@ dependencies:
 - async
 - parallel
 - cereal
-- base16-bytestring
+- memory
 
 library:
   source-dirs:

@@ -10,6 +10,8 @@ import GHC.Generics
 import Data.Semigroup()
 import Crypto.Number.Serialize(i2osp,os2ip)
 import qualified Data.ByteString as B
+import qualified Data.ByteArray as BA
+import qualified Data.ByteArray.Encoding as BA
 import Control.DeepSeq
 import qualified Data.Serialize as S
 import Crypto.PubKey.ECC.Types
@@ -18,7 +20,6 @@ import Data.Word (Word8)
 import Crypto.Random
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
-import qualified Data.ByteString.Base16 as B16
 
 ------------- Helpful Instances -------------------------
 
@@ -121,8 +122,8 @@ instance S.Serialize ECCipherText where
         S.putByteString $ compressPoint b
 
     get = do
-        a <- S.getByteString 66
-        b <- S.getByteString 66
+        a <- S.getByteString 33
+        b <- S.getByteString 33
         
         return $ ECCipherText (decompressPoint crv a) (decompressPoint crv b)
 
@@ -138,15 +139,15 @@ ec_g = ecc_g $ common_curve crv
 compressPoint :: Point -> B.ByteString
 compressPoint PointO = error "O point cannot be compressed"
 compressPoint (Point x y) 
-    | y `mod` 2 == 0 = B16.encode $ B.cons (2 :: Word8) $ i2osp x
-    | otherwise      = B16.encode $ B.cons (3 :: Word8) $ i2osp x
+    | y `mod` 2 == 0 = B.cons (2 :: Word8) $ i2osp x
+    | otherwise      = B.cons (3 :: Word8) $ i2osp x
 
 
 decompressPoint :: Curve -> B.ByteString -> Point
 decompressPoint (CurveF2m _) _ = error "Curve must be prime of type Fp"
 decompressPoint (CurveFP  (CurvePrime p _)) bs = do
-    let parityBit = B.take 2 bs
-        xCoord = (os2ip . fst . B16.decode) $ B.drop 2 bs
+    let parityBit = BA.convertToBase BA.Base16 $ B.take 1 bs :: B.ByteString
+        xCoord = os2ip $ (B.drop 1 bs :: B.ByteString)
         root = cipolla_sqrt p $ (xCoord^3 + 7) `mod` p
     if (parityBit == "02") then
         if (root `mod` 2 == 0 ) then
