@@ -33,3 +33,9 @@ ecDecrypt PrivateKey{..} ECCipherText{..} = PlainText $ grindPoint point 0
         grindPoint pt n
             | pointBaseMul crv n == pt = n
             | otherwise = grindPoint pt (n+1)
+
+ecElGamalwR :: Point -> Point -> Integer -> PlainText -> ECCipherText
+ecElGamalwR g y blind (PlainText msg) = ECCipherText alpha beta
+    where
+        alpha = pointMul crv blind g
+        beta = pointAddTwoMuls crv msg g blind y
