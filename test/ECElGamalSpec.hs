@@ -25,15 +25,15 @@ spec = do
 prop_CheckEncryptDecryptEC :: PlainText -> Property
 prop_CheckEncryptDecryptEC pt = monadicIO $ do
     (pub,prv) <- run $ genECKeys
-    commit <- run $ ecElGamalCommit (ECPublicPoints ec_g pub) pt
-    assert $ pt == ecDecrypt prv (ECPublicPoints ec_g pub) commit
+    commit <- run $ ecElGamalCommit ec_g pub pt
+    assert $ pt == ecDecrypt prv commit
 
 prop_CheckAdditiveEC :: PlainText -> PlainText -> Property
 prop_CheckAdditiveEC pt1@(PlainText p1) pt2@(PlainText p2) = monadicIO $ do
     (pub,prv) <- run $ genECKeys
-    commit1 <- run $ ecElGamalCommit (ECPublicPoints ec_g pub) pt1
-    commit2 <- run $ ecElGamalCommit (ECPublicPoints ec_g pub) pt2
+    commit1 <- run $ ecElGamalCommit ec_g pub pt1
+    commit2 <- run $ ecElGamalCommit ec_g pub pt2
     let commit3 = commit1 <> commit2
-        (PlainText p3) = ecDecrypt prv (ECPublicPoints ec_g pub) commit3
+        (PlainText p3) = ecDecrypt prv commit3
     assert $ (p1 + p2) == p3
 

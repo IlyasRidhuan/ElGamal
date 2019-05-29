@@ -105,21 +105,6 @@ data NIZKPDL = NIZKPDL {
     fsHash :: Hash
 } deriving (Show)
 
-data ECPublicPoints = ECPublicPoints {
-    g :: Point,
-    h :: Point
-} deriving (Show)
-
-instance S.Serialize ECPublicPoints where
-    put (ECPublicPoints g h) = do
-        S.putByteString $ compressPoint g
-        S.putByteString $ compressPoint h
-
-    get = do
-        g' <- S.getByteString 33
-        h' <- S.getByteString 33
-        return $ ECPublicPoints (decompressPoint crv g') (decompressPoint crv h')
-
 data ECCipherText = ECCipherText {
     ec_alpha :: Point,
     ec_beta :: Point
