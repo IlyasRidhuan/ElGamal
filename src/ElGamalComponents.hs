@@ -201,6 +201,6 @@ parseHex :: String -> Integer
 parseHex str = toInteger $ parser $ reverse str
     where
         parser []     = 0
-        parser (h:hs) = digitToInt h + 16 * parser hs
+        parser (h:hs) = toInteger (digitToInt h)  + 16 * parser hs
 
 
