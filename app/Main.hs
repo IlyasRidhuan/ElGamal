@@ -29,5 +29,5 @@ main = do
 
     ------ EC ElGamal Variant
     (ec_pub,ec_prv) <- genECKeys 
-    ec_ct <- ecElGamalCommit ec_g ec_pub (PlainText 20)
+    ec_ct <- ecElGamalCommit ec_pub (PlainText 20)
     print $ ecDecrypt ec_prv ec_ct

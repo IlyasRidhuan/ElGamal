@@ -16,11 +16,11 @@ genECKeys = do
     let public = pointBaseMul crv prv
     return (public,PrivateKey prv)
 
-ecElGamalCommit :: Point -> Point -> PlainText -> IO ECCipherText
-ecElGamalCommit g y (PlainText msg) = do
+ecElGamalCommit :: Point -> PlainText -> IO ECCipherText
+ecElGamalCommit h (PlainText msg) = do
     r <- scalarGenerate crv 
     let alpha = pointBaseMul crv r
-        beta = pointAddTwoMuls crv msg g r y
+        beta = pointAddTwoMuls crv msg ec_g r h
     return $ ECCipherText alpha beta
 
 ecDecrypt :: PrivateKey -> ECCipherText -> PlainText
@@ -34,8 +34,8 @@ ecDecrypt PrivateKey{..} ECCipherText{..} = PlainText $ grindPoint point 0
             | pointBaseMul crv n == pt = n
             | otherwise = grindPoint pt (n+1)
 
-ecElGamalwR :: Point -> Point -> Integer -> PlainText -> ECCipherText
-ecElGamalwR g y blind (PlainText msg) = ECCipherText alpha beta
+ecElGamalwR :: Point -> Integer -> PlainText -> ECCipherText
+ecElGamalwR h blind (PlainText msg) = ECCipherText alpha beta
     where
-        alpha = pointMul crv blind g
-        beta = pointAddTwoMuls crv msg g blind y
+        alpha = pointBaseMul crv blind
+        beta = pointAddTwoMuls crv msg ec_g blind h
