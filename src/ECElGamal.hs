@@ -39,3 +39,10 @@ ecElGamalwR h blind (PlainText msg) = ECCipherText alpha beta
     where
         alpha = pointBaseMul crv blind
         beta = pointAddTwoMuls crv msg ec_g blind h
+
+ecElGamalwRBase :: Point -> Point -> Integer -> PlainText -> ECCipherText
+ecElGamalwRBase g h blind (PlainText msg) = ECCipherText alpha beta
+    where
+        alpha = pointMul crv blind g
+        beta = pointAddTwoMuls crv msg g blind h
+        
