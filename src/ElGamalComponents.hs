@@ -20,6 +20,8 @@ import Data.Word (Word8)
 import Crypto.Random
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
+import Data.LargeWord (LargeKey(..),Word256)
+
 
 ------------- Helpful Instances -------------------------
 
@@ -113,19 +115,21 @@ data ECCipherText = ECCipherText {
 instance Semigroup ECCipherText where
     (ECCipherText a b) <> (ECCipherText a' b') = ECCipherText (pointAdd crv a a') (pointAdd crv b b')
 
--- instance S.Serialize Point where
---     put point = S.putByteString
+instance (S.Serialize a , S.Serialize b) => S.Serialize (LargeKey a b) where
+    put (LargeKey lo hi) = S.put hi >> S.put lo
+    get = flip LargeKey <$> S.get <*> S.get
+    
+instance S.Serialize Point where
+    put p = 
+        S.putByteString $ compressPoint p
+    get = do
+        p' <- S.getByteString 33
+        return $ decompressPoint crv p'
 
 instance S.Serialize ECCipherText where
-    put (ECCipherText a b) = do
-        S.putByteString $ compressPoint a
-        S.putByteString $ compressPoint b
+    put (ECCipherText a b) = S.put a >> S.put b
 
-    get = do
-        a <- S.getByteString 33
-        b <- S.getByteString 33
-        
-        return $ ECCipherText (decompressPoint crv a) (decompressPoint crv b)
+    get = ECCipherText <$> S.get <*> S.get
 
 ------------- HELPER FUNCTIONS -------------------------
 
@@ -139,8 +143,8 @@ ec_g = ecc_g $ common_curve crv
 compressPoint :: Point -> B.ByteString
 compressPoint PointO = error "O point cannot be compressed"
 compressPoint (Point x y) 
-    | y `mod` 2 == 0 = B.cons (2 :: Word8) $ i2osp x
-    | otherwise      = B.cons (3 :: Word8) $ i2osp x
+    | y `mod` 2 == 0 = B.cons (2 :: Word8) $ S.encode (fromIntegral x :: Word256)
+    | otherwise      = B.cons (3 :: Word8) $ S.encode (fromIntegral x :: Word256)
 
 
 decompressPoint :: Curve -> B.ByteString -> Point

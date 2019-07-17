@@ -29,6 +29,7 @@ dependencies:
 - parallel
 - cereal
 - memory
+- largeword
 
 library:
   source-dirs:
