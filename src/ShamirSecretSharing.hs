@@ -6,11 +6,11 @@ module ShamirSecretSharing where
 import Crypto.Number.Generate
 import Crypto.Number.ModArithmetic
 import Data.List.Split
-import ElGamalComponents (SplitKey,PublicKey(..),PrivateKey(..))
+import ElGamalComponents (SplitKey,PublicParams(..),PrivateKey(..))
 import Data.Ratio
 
-genThresholdKeys :: PublicKey -> PrivateKey -> Integer -> Integer -> IO [SplitKey]
-genThresholdKeys PublicKey{..} PrivateKey{..} t m = do
+genThresholdKeys :: PublicParams -> PrivateKey -> Integer -> Integer -> IO [SplitKey]
+genThresholdKeys PublicParams{..} PrivateKey{..} t m = do
     polyArray <- traverse (const $ generateBetween 0 x) [1..(t-1)]
     let polynomial = zip [1..] polyArray
     let polyConstituents = (\base key_shard -> expSafe base (fst key_shard) p * snd key_shard ) <$> [1..m] <*> polynomial
@@ -33,7 +33,7 @@ prodList' []     _ = []
 prodList' dbls@(i:is) n =
     product ((\x  -> x % (x - i)) <$> filter (/= i) dbls) : prodList' (is ++ [i]) (n-1)
 
-genVerificationKeys :: PublicKey -> [SplitKey] -> [(Integer,Integer)]
+genVerificationKeys :: PublicParams -> [SplitKey] -> [(Integer,Integer)]
 genVerificationKeys _                   []                    = []
-genVerificationKeys pub@PublicKey{..} ((n,PrivateKey{..}):ss) =
+genVerificationKeys pub@PublicParams{..} ((n,PrivateKey{..}):ss) =
     (n, expSafe g x p) : genVerificationKeys pub ss

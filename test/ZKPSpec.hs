@@ -1,4 +1,4 @@
-module ZKPTest where
+module ZKPSpec where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
@@ -7,6 +7,21 @@ import ShamirSecretSharing
 import ThresholdElGamal
 import ElGamalComponents
 import ElGamal
+import Test.Hspec
+import Test.Hspec.Core.QuickCheck (modifyMaxSuccess)
+
+instance Arbitrary PlainText where
+    arbitrary = do
+        pt <- (arbitrary :: Gen Integer) `suchThat` (> 0)
+        return $ PlainText (pt `mod` 10)
+        
+spec :: Spec
+spec = do
+    describe "Checking ZKP Implementation" $ do
+        modifyMaxSuccess (const 100) $ it "Checking Single Non Interactive ZKP for El Gamal" $ do
+            property prop_SingleNonInteractiveZKP
+        modifyMaxSuccess (const 100) $ it "Check Zk equality of discrete log" $ do
+            property prop_EqualityOfDL
 
 prop_SingleNonInteractiveZKP :: Property
 prop_SingleNonInteractiveZKP = monadicIO $ do

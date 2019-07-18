@@ -1,6 +1,7 @@
 module Main where
     
 import ElGamal
+import ECElGamal
 import ZKP
 import ShamirSecretSharing
 import ThresholdElGamal
@@ -25,3 +26,8 @@ main = do
     print boolArr
     -- Combine sufficient partial decryptions (4) to decrypt original cipher text (Outputs 20)
     print $ thresholdDecrypt pub ct (take 4 part)
+
+    ------ EC ElGamal Variant
+    (ec_pub,ec_prv) <- genECKeys 
+    ec_ct <- ecElGamalCommit ec_pub (PlainText 20)
+    print $ ecDecrypt ec_prv ec_ct
